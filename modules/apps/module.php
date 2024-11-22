@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class Module extends BaseModule {
-
+	// Empty PR.
 	const PAGE_ID = 'elementor-apps';
 
 	public function get_name() {
