@@ -36,6 +36,13 @@ concurrency:
   group: '${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  id-token: "write"
+
+env:
+  SPREADSHEET_ID: '19K69k2H_NciROVMxu7_3efswiocQxaVvkTj-1zOviys'
+
 jobs:
   build-plugin:
     name: Build plugin
@@ -91,9 +98,19 @@ jobs:
       - name: Install playwright/test
         run: |
           npx playwright install chromium
+      - name: Read spreadsheet
+        uses: ./.github/workflows/read-from-google-spreadsheet
+        with:
+          GCP_IDENTITY_PROVIDER: ${{ secrets.GCP_IDENTITY_PROVIDER }}
+          GCP_IDENTITY_PROVIDER_ACCOUNT: ${{ secrets.GCP_IDENTITY_PROVIDER_ACCOUNT }}
+          SPREADSHEET_ID: ${{env.SPREADSHEET_ID}}
+          RANGE: known_issues!A:A
+      - name: Generate SKIP_PATTERN
+        run: |
+          echo "SKIP_PATTERN: $SKIP_PATTERN"
       - name: Run Playwright tests
         if: ${{ matrix.shardIndex != 'elements-regression' }}
-        run: npm run test:playwright  -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        run: npm run test:playwright  -- --grep-invert=$SKIP_PATTERN --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - name: Run element regression tests
         if: ${{ matrix.shardIndex == 'elements-regression' }}
         run: npm run test:playwright:elements-regression

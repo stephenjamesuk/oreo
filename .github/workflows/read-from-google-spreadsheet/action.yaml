@@ -1,0 +1,50 @@
+name: 'Read from Google Spreadsheet'
+description: Used for excluding tests from runs using a document
+
+inputs:
+    GCP_IDENTITY_PROVIDER:
+        description: 'The Google Cloud Identity provider'
+        required: true
+    GCP_IDENTITY_PROVIDER_ACCOUNT:
+        description: 'The service account used for authentication'
+        required: true
+    SPREADSHEET_ID:
+        description: 'The Google Spreadsheet ID'
+        required: true
+    RANGE:
+        description: 'The range to read from the spreadsheet'
+        required: true
+
+runs:
+    using: "composite"
+    steps:
+        - id: 'auth'
+          name: 'Authenticate to Google Cloud'
+          uses: 'google-github-actions/auth@v2'
+          with:
+              token_format: 'access_token'
+              workload_identity_provider: ${{ inputs.GCP_IDENTITY_PROVIDER }}
+              service_account: ${{ inputs.GCP_IDENTITY_PROVIDER_ACCOUNT }}
+              access_token_lifetime: '300s'
+              access_token_scopes: 'https://www.googleapis.com/auth/drive'
+        - shell: bash
+          run: |
+              RESPONSE=$(curl -s -X GET "https://sheets.googleapis.com/v4/spreadsheets/${{inputs.SPREADSHEET_ID}}/values/${{inputs.RANGE}}" \
+                  -H "Authorization: Bearer ${{ steps.auth.outputs.access_token }}" \
+                  -H "Content-Type: application/json; charset=UTF-8")
+              echo "Response from Google Sheets API: $RESPONSE"
+              if [ -z "$RESPONSE" ]; then
+                  echo "No response received from the API."
+                  SKIP_PATTERN=""
+              elif [[ "$RESPONSE" == *"values"* ]]; then
+                  echo "Data exists, processing..."
+                  SKIP_PATTERN=$(echo "$RESPONSE" | jq -r '.values | map(.[0]) | join("|")')
+              else
+                  echo "No valid data found in response."
+                  SKIP_PATTERN=""
+              fi
+              if [ "$SKIP_PATTERN" == "null" ] || [ -z "$SKIP_PATTERN" ]; then
+                SKIP_PATTERN=""
+              fi
+              echo "SKIP_PATTERN=$SKIP_PATTERN" >> $GITHUB_ENV
+              echo "SKIP_PATTERN: $SKIP_PATTERN"
