@@ -100,7 +100,12 @@ test.describe( 'Video tests inside a container @video', () => {
 		await editor.setSwitcherControlValue( 'show_image_overlay', true );
 		await editor.setMediaControlImageValue( 'image_overlay', `${ imageTitle }.png` );
 		await editor.waitForPanelToLoad();
-		await editor.setSelectControlValue( 'image_overlay_size', 'thumbnail' );
+		await videoWidget.selectImageSize(
+			{
+				widget: EditorSelectors.video.widget,
+				select: EditorSelectors.video.imageSizeSelect,
+				imageSize: 'thumbnail',
+			} );
 		await page.waitForTimeout( 500 );
 
 		// Assert 1 - in the Editor.
