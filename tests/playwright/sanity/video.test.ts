@@ -86,7 +86,7 @@ test.describe( 'Video tests inside a container @video', () => {
 		} );
 	}
 
-	test.only( 'Choose image test', async ( { page, apiRequests }, testInfo ) => {
+	test( 'Choose image test', async ( { page, apiRequests }, testInfo ) => {
 		// Arrange.
 		const wpAdmin = new WpAdminPage( page, testInfo, apiRequests );
 		const editor = new EditorPage( page, testInfo );
