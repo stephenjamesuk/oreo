@@ -33,7 +33,7 @@ class Assets extends Base {
 
 		$element_assets_depend = [
 			'styles' => $element_data->get_style_depends(),
-			'scripts' => array_merge( $element_data->get_script_depends(), $element_data->get_global_scripts() ),
+			'scripts' => $element_data->get_script_depends(),
 		];
 
 		if ( $element_assets_depend ) {

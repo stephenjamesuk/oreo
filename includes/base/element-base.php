@@ -120,10 +120,6 @@ abstract class Element_Base extends Controls_Stack {
 		return $this->depended_scripts;
 	}
 
-	public function get_global_scripts() {
-		return [ 'elementor-frontend' ];
-	}
-
 	/**
 	 * Enqueue scripts.
 	 *
@@ -143,10 +139,6 @@ abstract class Element_Base extends Controls_Stack {
 				Utils::handle_deprecation( $script, $deprecated_scripts[ $script ]['version'], $deprecated_scripts[ $script ]['replacement'] );
 			}
 
-			wp_enqueue_script( $script );
-		}
-
-		foreach ( $this->get_global_scripts() as $script ) {
 			wp_enqueue_script( $script );
 		}
 	}
