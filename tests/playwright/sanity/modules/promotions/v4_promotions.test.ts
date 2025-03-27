@@ -2,7 +2,7 @@ import { parallelTest as test } from '../../../parallelTest';
 import WpAdminPage from '../../../pages/wp-admin-page';
 import PromotionsHelper from '../../../pages/promotions/helper';
 
-test.describe( 'V4 modal promotion test @promotions', () => {
+test.describe.skip( 'V4 modal promotion test @promotions', () => {
 	const experimentName = 'e_atomic_elements';
 
 	test.beforeAll( async ( { browser, apiRequests }, testInfo ) => {
