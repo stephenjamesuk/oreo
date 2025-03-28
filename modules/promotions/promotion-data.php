@@ -15,20 +15,13 @@ class PromotionData {
 	public function get_promotion_data( $force_request = false ): array {
 		$assets_data = $this->transform_assets_data( $force_request );
 
-		if ( ! Utils::has_pro() ) {
-			return [
-				Utils::ANIMATED_HEADLINE => $this->get_animated_headline_data( $assets_data ),
-				Utils::VIDEO_PLAYLIST => $this->get_video_playlist_data( $assets_data ),
-				Utils::CTA => $this->get_cta_button_data( $assets_data ),
-				Utils::IMAGE_CAROUSEL => $this->get_image_carousel_data( $assets_data ),
-				Utils::TESTIMONIAL_WIDGET => $this->get_testimonial_widget_data( $assets_data ),
-				Utils::V4_CHIP => $this->get_v4_promotion_data( $assets_data ),
-			];
-		} else {
-			return [
-				Utils::V4_CHIP => $this->get_v4_promotion_data( $assets_data ),
-			];
-		}
+		return [
+			Utils::ANIMATED_HEADLINE => $this->get_animated_headline_data( $assets_data ),
+			Utils::VIDEO_PLAYLIST => $this->get_video_playlist_data( $assets_data ),
+			Utils::CTA => $this->get_cta_button_data( $assets_data ),
+			Utils::IMAGE_CAROUSEL => $this->get_image_carousel_data( $assets_data ),
+			Utils::TESTIMONIAL_WIDGET => $this->get_testimonial_widget_data( $assets_data ),
+		];
 	}
 
 	private function transform_assets_data( $force_request = false ) {
