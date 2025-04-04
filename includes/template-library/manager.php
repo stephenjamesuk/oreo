@@ -670,9 +670,10 @@ class Manager {
 			return $upload_result;
 		}
 
-		$source = $this->get_source( $data['source'] ?? 'local' );
+		/** @var Source_Local $source_local */
+		$source_local = $this->get_source( 'local' );
 
-		$import_result = $source->import_template( $upload_result['name'], $upload_result['tmp_name'] );
+		$import_result = $source_local->import_template( $upload_result['name'], $upload_result['tmp_name'] );
 
 		// Remove the temporary directory generated for the stream-uploaded file.
 		Plugin::$instance->uploads_manager->remove_file_or_dir( dirname( $upload_result['tmp_name'] ) );
