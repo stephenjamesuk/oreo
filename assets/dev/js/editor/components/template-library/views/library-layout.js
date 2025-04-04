@@ -6,7 +6,7 @@ var TemplateLibraryHeaderActionsView = require( 'elementor-templates/views/parts
 	TemplateLibrarySaveTemplateView = require( 'elementor-templates/views/parts/save-template' ),
 	TemplateLibraryImportView = require( 'elementor-templates/views/parts/import' ),
 	TemplateLibraryConnectView = require( 'elementor-templates/views/parts/connect' ),
-	TemplateLibraryCloudStateView = require( 'elementor-templates/views/parts/cloud-states' ),
+	TemplateLibraryCloudConnectView = require( 'elementor-templates/views/parts/connect-cloud' ),
 	TemplateLibraryPreviewView = require( 'elementor-templates/views/parts/preview' );
 
 import { SAVE_CONTEXTS } from './../constants';
@@ -110,8 +110,8 @@ module.exports = elementorModules.common.views.modal.Layout.extend( {
 		this.modalContent.show( new TemplateLibraryConnectView( args ) );
 	},
 
-	showCloudStateView() {
-		this.modalContent.show( new TemplateLibraryCloudStateView() );
+	showCloudConnectView() {
+		this.modalContent.show( new TemplateLibraryCloudConnectView() );
 	},
 
 	showSaveTemplateView( elementModel, context = SAVE_CONTEXTS.SAVE ) {
