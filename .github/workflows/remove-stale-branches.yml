@@ -33,7 +33,8 @@ jobs:
           dry-run: false
           exempt-branches-regex: ${{ env.exempt_branches_regex }}
           exempt-protected-branches: true
-          stale-branch-message: "@{author} Your branch [{branchName}]({branchUrl}) hasn't been updated in the last 60 days and is marked as stale. It will be removed in a week.\r\nIf you want to keep this branch around, delete this comment or add new commits to this branch."
+          stale-branch-message: "@{author} Your branch [{branchName}]({branchUrl}) hasn't been updated in the last 90 days and is marked as stale. It will be removed in a week.\r\nIf you want to keep this branch around, delete this comment or add new commits to this branch."
+          # if recipient can't be informed, it will send the message to default-recipient
           default-recipient: "Svitlana-Dykun"
           days-before-branch-stale: 90
           days-before-branch-delete: 7
