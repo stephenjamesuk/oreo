@@ -4,7 +4,7 @@ import { getElementSelector } from '../../../assets/elements-utils';
 import WpAdminPage from '../../../pages/wp-admin-page';
 import widgets from '../../../enums/widgets';
 
-test.describe( 'Container tests @container', () => {
+test.describe( 'Container tests 1 @container', () => {
 	test.beforeAll( async ( { browser, apiRequests }, testInfo ) => {
 		const context = await browser.newContext();
 		const page = await context.newPage();
@@ -42,13 +42,13 @@ test.describe( 'Container tests @container', () => {
 		// Assert.
 		await test.step( 'Verify background slideshow', async () => {
 			await editor.togglePreviewMode();
-			await expect.soft( editor.getPreviewFrame().locator( '.e-con' ).nth( 0 ) ).toHaveScreenshot( 'editor-container-background-slideshow.png' );
+			await expect( editor.getPreviewFrame().locator( '.e-con' ).nth( 0 ) ).toHaveScreenshot( 'editor-container-background-slideshow.png' );
 			await editor.togglePreviewMode();
 			await editor.publishAndViewPage();
 		} );
 
 		await test.step( 'Verify background slideshow on the frontend', async () => {
-			await expect.soft( page.locator( '.e-con' ) ).toHaveScreenshot( 'frontend-container-background-slideshow.png' );
+			await expect( page.locator( '.e-con' ) ).toHaveScreenshot( 'frontend-container-background-slideshow.png' );
 		} );
 	} );
 
@@ -65,17 +65,22 @@ test.describe( 'Container tests @container', () => {
 		const image = await editor.addWidget( widgets.image, containerId );
 
 		// Act - Move the button to be last.
-		await Promise.race( [
-			editor.previewFrame.dragAndDrop( getElementSelector( button ), getElementSelector( image ) ),
-			new Promise( ( _, reject ) => setTimeout( () => reject( new Error( 'DnD Timeout' ) ), 5000 ) ),
-		] );
+		await editor.previewFrame.dragAndDrop(
+			getElementSelector( button ),
+			getElementSelector( image ),
+		);
+
+		// await Promise.race( [
+		// 	editor.previewFrame.dragAndDrop( getElementSelector( button ), getElementSelector( image ) ),
+		// 	new Promise( ( _, reject ) => setTimeout( () => reject( new Error( 'DnD Timeout' ) ), 5000 ) ),
+		// ] );
 		const buttonEl = await editor.getElementHandle( button );
 		const headingEl = await editor.getElementHandle( heading );
 		const elBeforeButton = await buttonEl.evaluate( ( node ) => node.previousElementSibling );
 		const elAfterHeading = await headingEl.evaluate( ( node ) => node.nextElementSibling );
 
 		// Assert - Test that the image is between the heading & button.
-		expect.soft( elBeforeButton ).toEqual( elAfterHeading );
+		expect( elBeforeButton ).toEqual( elAfterHeading );
 	} );
 
 	test( 'Test widgets display inside the container using various directions and content width', async ( { page, apiRequests }, testInfo ) => {
@@ -105,7 +110,7 @@ test.describe( 'Container tests @container', () => {
 		await editor.togglePreviewMode();
 
 		// Assert.
-		await expect.soft( container ).toHaveScreenshot( 'container-row.png' );
+		await expect( container ).toHaveScreenshot( 'container-row.png' );
 
 		// Act.
 		await editor.togglePreviewMode();
@@ -115,7 +120,7 @@ test.describe( 'Container tests @container', () => {
 		await editor.togglePreviewMode();
 
 		// Assert.
-		await expect.soft( container ).toHaveScreenshot( 'container-row-full.png' );
+		await expect( container ).toHaveScreenshot( 'container-row-full.png' );
 
 		// Act.
 		await editor.togglePreviewMode();
@@ -127,7 +132,7 @@ test.describe( 'Container tests @container', () => {
 		await editor.togglePreviewMode();
 
 		// Assert.
-		await expect.soft( container ).toHaveScreenshot( 'container-column-full-start.png' );
+		await expect( container ).toHaveScreenshot( 'container-column-full-start.png' );
 
 		// Act.
 		await editor.togglePreviewMode();
@@ -137,7 +142,7 @@ test.describe( 'Container tests @container', () => {
 		await editor.togglePreviewMode();
 
 		// Assert.
-		await expect.soft( container ).toHaveScreenshot( 'container-column-boxed-start.png' );
+		await expect( container ).toHaveScreenshot( 'container-column-boxed-start.png' );
 	} );
 
 	test( 'Test widgets inside the container using position absolute', async ( { page, apiRequests }, testInfo ) => {
@@ -162,7 +167,7 @@ test.describe( 'Container tests @container', () => {
 
 		// Assert.
 		const pageView = editor.page.locator( '#elementor-preview-responsive-wrapper' );
-		await expect.soft( pageView ).toHaveScreenshot( 'heading-boxed-absolute.png' );
+		await expect( pageView ).toHaveScreenshot( 'heading-boxed-absolute.png' );
 
 		// Act.
 		await editor.togglePreviewMode();
@@ -172,7 +177,7 @@ test.describe( 'Container tests @container', () => {
 		await editor.togglePreviewMode();
 
 		// Assert.
-		await expect.soft( pageView ).toHaveScreenshot( 'heading-full-absolute.png' );
+		await expect( pageView ).toHaveScreenshot( 'heading-full-absolute.png' );
 
 		// Reset the Default template.
 		await editor.togglePreviewMode();
@@ -200,7 +205,7 @@ test.describe( 'Container tests @container', () => {
 
 		// Assert.
 		const pageView = editor.page.locator( '#elementor-preview-responsive-wrapper' );
-		await expect.soft( pageView ).toHaveScreenshot( 'heading-boxed-fixed.png' );
+		await expect( pageView ).toHaveScreenshot( 'heading-boxed-fixed.png' );
 
 		// Reset the Default template.
 		await editor.togglePreviewMode();
@@ -230,7 +235,7 @@ test.describe( 'Container tests @container', () => {
 
 		// Assert.
 		const pageView = editor.page.locator( '#elementor-preview-responsive-wrapper' );
-		await expect.soft( pageView ).toHaveScreenshot( 'heading-full-fixed.png' );
+		await expect( pageView ).toHaveScreenshot( 'heading-full-fixed.png' );
 	} );
 
 	test( 'Right click should add Full Width container', async ( { page, apiRequests }, testInfo ) => {
@@ -243,8 +248,8 @@ test.describe( 'Container tests @container', () => {
 		await editor.getPreviewFrame().locator( '.elementor-editor-element-edit' ).click( { button: 'right' } );
 
 		// Assert.
-		await expect.soft( page.locator( '.elementor-context-menu-list__item-newContainer' ) ).toBeVisible();
+		await expect( page.locator( '.elementor-context-menu-list__item-newContainer' ) ).toBeVisible();
 		await page.locator( '.elementor-context-menu-list__item-newContainer' ).click();
-		await expect.soft( editor.getPreviewFrame().locator( '.e-con-full' ) ).toHaveCount( 1 );
+		await expect( editor.getPreviewFrame().locator( '.e-con-full' ) ).toHaveCount( 1 );
 	} );
 } );
