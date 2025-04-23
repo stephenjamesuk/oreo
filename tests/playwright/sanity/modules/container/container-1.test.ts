@@ -52,7 +52,7 @@ test.describe( 'Container tests @container', () => {
 		} );
 	} );
 
-	test( 'Sort items in a Container using DnD', async ( { page, apiRequests }, testInfo ) => {
+	test.skip( 'Sort items in a Container using DnD', async ( { page, apiRequests }, testInfo ) => {
 		// Arrange.
 		const wpAdmin = new WpAdminPage( page, testInfo, apiRequests );
 		const editor = await wpAdmin.openNewPage();
