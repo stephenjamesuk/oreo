@@ -30,7 +30,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 		connect: '#elementor-template-library-connect__badge',
 		connectBadge: '.source-selections-input.cloud .connect-badge',
 		cloudFormInputs: '.cloud-library-form-inputs',
-		upgradeBadge: '.source-selections-input.cloud upgrade-badge',
 	},
 
 	events: {
@@ -39,7 +38,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 		'click @ui.foldersList': 'onFoldersListClick',
 		'click @ui.removeFolderSelection': 'onRemoveFolderSelectionClick',
 		'click @ui.selectedFolderText': 'onSelectedFolderTextClick',
-		'click @ui.upgradeBadge': 'onUpgradeBadgeClicked',
 		'change @ui.sourceSelectionCheckboxes': 'handleSourceSelectionChange',
 		'mouseenter @ui.infoIcon': 'showInfoTip',
 		'mouseenter @ui.connect': 'showConnectInfoTip',
@@ -68,10 +66,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 
 	handleOnRender() {
 		setTimeout( () => this.ui.templateNameInput.trigger( 'focus' ) );
-
-		elementor.templates.eventManager.sendPageViewEvent( {
-			location: elementor.editorEvents.config.secondaryLocations.templateLibrary[ `${ context }Modal` ],
-		} );
 
 		const context = this.getOption( 'context' );
 
@@ -158,10 +152,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 		this.$( '.source-selections-input #cloud' ).prop( 'checked', false );
 
 		this.ui.cloudFormInputs.addClass( stateClass );
-
-		elementor.templates.eventManager.sendPageViewEvent( {
-			location: elementor.editorEvents.config.secondaryLocations.templateLibrary.saveModalSelectUpgrade,
-		} );
 	},
 
 	getSaveType() {
@@ -393,10 +383,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 				this.disableSelectedFolder();
 			}
 		}
-
-		elementor.templates.eventManager.sendPageViewEvent( {
-			location: elementor.editorEvents.config.secondaryLocations.templateLibrary.saveModalSelectFolder,
-		} );
 	},
 
 	renderFolderDropdown() {
@@ -605,10 +591,7 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 					'elementor',
 				),
 				classes: '',
-				callback: () => {
-					open( goLink, '_blank' );
-					this.onUpgradeBadgeClicked();
-				},
+				callback: () => open( goLink, '_blank' ),
 			} );
 
 		this.infoTipDialog.getElements( 'header' ).remove();
@@ -654,10 +637,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 	},
 
 	handleElementorConnect() {
-		elementor.templates.eventManager.sendPageViewEvent( {
-			location: elementor.editorEvents.config.secondaryLocations.templateLibrary.saveModalSelectConnect,
-		} );
-
 		this.ui.connect.elementorConnect( {
 			success: () => {
 				elementor.config.library_connect.is_connected = true;
@@ -680,15 +659,6 @@ const TemplateLibrarySaveTemplateView = Marionette.ItemView.extend( {
 	updateSubmitButtonState( shouldDisableSubmitButton ) {
 		this.ui.submitButton.toggleClass( 'e-primary', ! shouldDisableSubmitButton );
 		this.ui.submitButton.prop( 'disabled', shouldDisableSubmitButton );
-	},
-
-	onUpgradeBadgeClicked() {
-		const upgradePosition = elementor.templates.hasCloudLibraryQuota() ? 'save to-max' : 'save to-free';
-
-		elementor.templates.eventManager.sendUpgradeClickedEvent( {
-			secondaryLocation: elementor.editorEvents.config.secondaryLocations.templateLibrary.saveModal,
-			upgrade_position: upgradePosition,
-		} );
 	},
 } );
 

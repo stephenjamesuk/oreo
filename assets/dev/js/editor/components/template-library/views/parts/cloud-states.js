@@ -14,7 +14,6 @@ module.exports = Marionette.ItemView.extend( {
 
 	events: {
 		'click @ui.selectSourceFilter': 'onSelectSourceFilterChange',
-		'click @ui.button': 'onButtonClick',
 	},
 
 	modesStrings() {
@@ -54,10 +53,6 @@ module.exports = Marionette.ItemView.extend( {
 		this.handleElementorConnect();
 
 		elementor.templates.layout.getHeaderView()?.tools?.$el[ 0 ]?.classList?.add( 'e-hidden-disabled' );
-
-		elementor.templates.eventManager.sendPageViewEvent( {
-			location: elementor.editorEvents.config.secondaryLocations.templateLibrary.cloudTabUpgrade,
-		} );
 	},
 
 	updateTemplateMarkup() {
@@ -90,13 +85,6 @@ module.exports = Marionette.ItemView.extend( {
 
 	onSelectSourceFilterChange( event ) {
 		elementor.templates.onSelectSourceFilterChange( event );
-	},
-
-	onButtonClick() {
-		elementor.templates.eventManager.sendUpgradeClickedEvent( {
-			secondaryLocation: elementor.editorEvents.config.secondaryLocations.templateLibrary.cloudTab,
-			upgradePosition: elementor.editorEvents.config.secondaryLocations.templateLibrary.cloudTab,
-		} );
 	},
 
 	onDestroy() {
