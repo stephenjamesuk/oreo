@@ -64,16 +64,21 @@ test.describe( 'Container tests 1 @container', () => {
 		const heading = await editor.addWidget( widgets.heading, containerId );
 		const image = await editor.addWidget( widgets.image, containerId );
 
-		// Act - Move the button to be last.
-		// await editor.previewFrame.dragAndDrop(
-		// 	getElementSelector( button ),
-		// 	getElementSelector( image ),
-		// );
+		//Act - Move the button to be last.
+		await editor.previewFrame.dragAndDrop(
+			getElementSelector( button ),
+			getElementSelector( image ),
+		);
 
-		await Promise.race( [
-			editor.previewFrame.dragAndDrop( getElementSelector( button ), getElementSelector( image ) ),
-			new Promise( ( _, reject ) => setTimeout( () => reject( new Error( 'DnD Timeout' ) ), 5000 ) ),
-		] );
+		await editor.previewFrame.dragAndDrop(
+			getElementSelector( button ),
+			getElementSelector( image ),
+		);
+
+		// await Promise.race( [
+		// 	editor.previewFrame.dragAndDrop( gestElementSelector( button ), getElementSelector( image ) ),
+		// 	new Promise( ( _, reject ) => setTimeout( () => reject( new Error( 'DnD Timeout' ) ), 5000 ) ),
+		// ] );
 		const buttonEl = await editor.getElementHandle( button );
 		const headingEl = await editor.getElementHandle( heading );
 		const elBeforeButton = await buttonEl.evaluate( ( node ) => node.previousElementSibling );
