@@ -22,7 +22,6 @@ on:
 jobs:
   build-plugin:
     uses: ./.github/workflows/build.yml
-
   run-upgrade-test:
     name: Playwright plugin upgrade test
     runs-on: ubuntu-22.04
@@ -31,25 +30,25 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
           cache: 'npm'
-          cache-dependency-path: 'package-lock.json'
-
       - name: Install dependencies
-        run: npm ci
-
+        run: |
+          set -euo pipefail
+          npm run prepare-environment:ci
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build-plugin.outputs.artifact_name }}
           path: ./build
-
+      - name: Download hello-elementor theme
+        run: |
+          set -euo pipefail
+          curl -L --output hello-elementor.zip "https://downloads.wordpress.org/theme/hello-elementor.zip"
+          unzip hello-elementor.zip
       - name: Install WordPress environment
         run: |
           set -euo pipefail
@@ -61,26 +60,20 @@ jobs:
           set -euo pipefail
           for i in {1..60}; do
             if curl -sSf http://localhost:8888/wp-login.php >/dev/null; then
-              echo "WP is up"
+              echo "WordPress is ready"
               exit 0
             fi
+            echo "Waiting for WordPress... ($i/60)"
             sleep 2
           done
+          echo "WordPress failed to start"
           exit 1
-
-      - name: Prepare WP for theme operations
+      - name: Setup test data
         run: |
           set -euo pipefail
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'wp config get FS_METHOD >/dev/null 2>&1 || wp config set FS_METHOD direct --type=constant --raw'"
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'chown -R www-data:www-data wp-content/themes 2>/dev/null || true; chmod -R u+rwX,go+rX wp-content/themes 2>/dev/null || true'"
-
-      - name: Setup test data (install theme + base setup)
-        run: |
-          set -euo pipefail
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp theme is-installed hello-elementor || wp theme install hello-elementor --force; wp theme activate hello-elementor'"
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install elementor --activate || wp plugin activate elementor'"
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'bash elementor-config/setup.sh'"
-
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp theme install hello-elementor.zip --activate" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin install elementor --activate" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="bash elementor-config/setup.sh" --port=8888
       - name: WordPress debug information
         run: |
           set -euo pipefail
@@ -88,27 +81,21 @@ jobs:
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp --info" --port=8888
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin list" --port=8888
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp theme list" --port=8888
-
       - name: Install Playwright browser & deps
         run: |
           set -euo pipefail
           npx playwright install-deps
           npx playwright install chromium
-
-      - name: Upgrade site (install built plugin ZIP + permalinks)
+      - name: Upgrade site
         run: |
           set -euo pipefail
-          mkdir -p ./templates/playwright
-          cd ./build && zip -r ../templates/playwright/elementor.zip . && cd ..
-          ls -la ./templates/playwright/elementor.zip
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install ./templates/playwright/elementor.zip --force'"
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'wp rewrite structure \"/%postname%/\" --hard && wp rewrite flush --hard'"
-
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin install ./build --force" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp rewrite structure '/%postname%/' --hard && wp rewrite flush --hard" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin list" --port=8888
       - name: Run Playwright tests
         run: |
           set -euo pipefail
           npm run test:playwright:elements-regression -- --grep="Test heading template"
-
       - name: Upload Playwright test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -129,7 +116,7 @@ jobs:
 
   test-result:
     needs: run-upgrade-test
-    if: ${{ always() }}
+    if: ${{ always() }} # Will be run even if 'Playwright' matrix will be skipped
     runs-on: ubuntu-22.04
     name: Playwright - Test Results
     steps:
