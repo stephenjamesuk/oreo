@@ -52,14 +52,16 @@ jobs:
 
       - name: Install WordPress environment
         run: |
+          set -euo pipefail
           npm run setup-templates
           npx wp-lite-env start --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888
 
       - name: Wait for WordPress to be ready
         run: |
+          set -euo pipefail
           for i in {1..60}; do
             if curl -sSf http://localhost:8888/wp-login.php >/dev/null; then
-              echo "✅ WP is up";
+              echo "✅ WP is up"
               exit 0
             fi
             echo "⏳ Waiting for WP..."
@@ -68,49 +70,60 @@ jobs:
           echo "❌ WP did not become ready in time"
           exit 1
 
-      - name: Setup test data
+      - name: Setup test data (install theme + base setup)
         run: |
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin install elementor" --port=8888
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="bash elementor-config/setup.sh" --port=8888
+          set -euo pipefail
+          npx wp-lite-env cli \
+            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
+            --port=8888 \
+            --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp theme install https://downloads.wordpress.org/theme/hello-elementor.zip --force --activate"
+
+          npx wp-lite-env cli \
+            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
+            --port=8888 \
+            --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install elementor --activate"
+
+          npx wp-lite-env cli \
+            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
+            --port=8888 \
+            --command="bash elementor-config/setup.sh"
 
       - name: WordPress debug information
         run: |
+          set -euo pipefail
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp core version" --port=8888
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp --info" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin list" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp theme list" --port=8888
 
       - name: Install Playwright browser & deps
         run: |
+          set -euo pipefail
           npx playwright install-deps
           npx playwright install chromium
 
-      - name: Upgrade site (install theme and plugin ZIP)
+      - name: Upgrade site (install built plugin ZIP + permalinks)
         run: |
-          # Сформировать ZIP с корректной структурой (файлы плагина в корне архива)
+          set -euo pipefail
           mkdir -p ./templates/playwright
           cd ./build && zip -r ../templates/playwright/elementor.zip . && cd ..
           ls -la ./templates/playwright/elementor.zip
 
-          # Установить и активировать тему Hello через WP CLI (надёжнее, чем curl+unzip)
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --command="wp theme install https://downloads.wordpress.org/theme/hello-elementor.zip --activate" --port=8888
+          npx wp-lite-env cli \
+            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
+            --port=8888 \
+            --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install ./templates/playwright/elementor.zip --force"
 
-          # Установить собранный плагин из ТОГО ЖЕ пути
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --command="wp plugin install ./templates/playwright/elementor.zip --force" --port=8888
-
-          # Перечень плагинов/тем для проверки
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin list" --port=8888
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp theme list" --port=8888
-
-          # Настроить пермалинки (часто влияет на навигацию/публикацию)
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --command="wp rewrite structure '/%postname%/' --hard && wp rewrite flush --hard" --port=8888
+          npx wp-lite-env cli \
+            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
+            --port=8888 \
+            --command="wp rewrite structure '/%postname%/' --hard && wp rewrite flush --hard"
 
       - name: Run Playwright tests
-        # Использую ваш скрипт и grep из примера
-        run: npm run test:playwright:elements-regression -- --grep="Test heading template"
+        run: |
+          set -euo pipefail
+          npm run test:playwright:elements-regression -- --grep="Test heading template"
 
-      # Сохранить результаты на случай фейла/диагностики
       - name: Upload Playwright test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -131,13 +144,12 @@ jobs:
 
   test-result:
     needs: run-upgrade-test
-    if: ${{ always() }} # Запустится даже если 'run-upgrade-test' будет пропущен
+    if: ${{ always() }}
     runs-on: ubuntu-22.04
     name: Playwright - Test Results
     steps:
       - name: Test status
         run: echo "Test status is - ${{ needs.run-upgrade-test.result }}"
-
       - name: Check Playwright job status
         if: ${{ needs.run-upgrade-test.result != 'success' && needs.run-upgrade-test.result != 'skipped' }}
         run: exit 1
