@@ -44,11 +44,7 @@ jobs:
         with:
           name: ${{ needs.build-plugin.outputs.artifact_name }}
           path: ./build
-      - name: Download hello-elementor theme
-        run: |
-          set -euo pipefail
-          curl -L --output hello-elementor.zip "https://downloads.wordpress.org/theme/hello-elementor.zip"
-          unzip hello-elementor.zip
+
       - name: Install WordPress environment
         run: |
           set -euo pipefail
@@ -71,7 +67,7 @@ jobs:
       - name: Setup test data
         run: |
           set -euo pipefail
-          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp theme install hello-elementor.zip --activate" --port=8888
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp theme install https://downloads.wordpress.org/theme/hello-elementor.zip --activate" --port=8888
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin install elementor --activate" --port=8888
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="bash elementor-config/setup.sh" --port=8888
       - name: WordPress debug information
