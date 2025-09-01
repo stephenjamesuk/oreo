@@ -61,32 +61,26 @@ jobs:
           set -euo pipefail
           for i in {1..60}; do
             if curl -sSf http://localhost:8888/wp-login.php >/dev/null; then
-              echo "✅ WP is up"
+              echo "WP is up"
               exit 0
             fi
-            echo "⏳ Waiting for WP..."
             sleep 2
           done
-          echo "❌ WP did not become ready in time"
           exit 1
 
-      - name: Setup test data (install theme + base setup)
+      - name: Prepare WP for theme operations
         run: |
           set -euo pipefail
-          npx wp-lite-env cli \
-            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --port=8888 \
-            --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp theme install https://downloads.wordpress.org/theme/hello-elementor.zip --force --activate"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="wp config set FS_METHOD direct --type=constant --raw || true"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash -lc 'chown -R www-data:www-data wp-content/themes || true && chmod -R u+rwX,go+rX wp-content/themes || true'"
 
-          npx wp-lite-env cli \
-            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --port=8888 \
-            --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install elementor --activate"
-
-          npx wp-lite-env cli \
-            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --port=8888 \
-            --command="bash elementor-config/setup.sh"
+      - name: Setup test data (themes and base setup)
+        run: |
+          set -euo pipefail
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp theme install twentytwentyfour --activate --force || wp theme activate twentytwentyfour || wp theme install twentytwentyfour --activate --force"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp theme install hello-elementor --activate --force || wp theme activate hello-elementor || wp theme install hello-elementor --activate --force"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install elementor --activate || wp plugin activate elementor"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="bash elementor-config/setup.sh"
 
       - name: WordPress debug information
         run: |
@@ -108,16 +102,8 @@ jobs:
           mkdir -p ./templates/playwright
           cd ./build && zip -r ../templates/playwright/elementor.zip . && cd ..
           ls -la ./templates/playwright/elementor.zip
-
-          npx wp-lite-env cli \
-            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --port=8888 \
-            --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install ./templates/playwright/elementor.zip --force"
-
-          npx wp-lite-env cli \
-            --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json \
-            --port=8888 \
-            --command="wp rewrite structure '/%postname%/' --hard && wp rewrite flush --hard"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="env WP_CLI_CACHE_DIR=/tmp/.wp-cli/cache wp plugin install ./templates/playwright/elementor.zip --force"
+          npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --port=8888 --command="wp rewrite structure '/%postname%/' --hard && wp rewrite flush --hard"
 
       - name: Run Playwright tests
         run: |
