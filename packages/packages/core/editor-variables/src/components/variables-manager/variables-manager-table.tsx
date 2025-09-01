@@ -17,27 +17,35 @@ import {
 } from '@elementor/ui';
 import { __ } from '@wordpress/i18n';
 
-import { getVariables } from '../../hooks/use-prop-variables';
+import { type TVariablesList } from '../../storage';
 import { getVariableType } from '../../variables-registry/variable-type-registry';
+import { LabelField } from '../fields/label-field';
 import { VariableEditMenu, type VariableManagerMenuAction } from './variable-edit-menu';
+import { VariableEditableCell } from './variable-editable-cell';
 import { VariableTableCell } from './variable-table-cell';
 
 type Props = {
 	menuActions: VariableManagerMenuAction[];
+	variables: TVariablesList;
+	onChange: ( variables: TVariablesList ) => void;
 };
 
-export const VariablesManagerTable = ( { menuActions }: Props ) => {
-	const variables = getVariables( false );
-
+export const VariablesManagerTable = ( { menuActions, variables, onChange: handleOnChange }: Props ) => {
 	const [ ids, setIds ] = useState< string[] >( Object.keys( variables ) );
-	const rows = ids.map( ( id ) => ( {
-		id,
-		name: variables[ id ].label,
-		value: variables[ id ].value,
-		type: variables[ id ].type,
-		icon: getVariableType( variables[ id ].type ).icon,
-		startIcon: getVariableType( variables[ id ].type ).startIcon,
-	} ) );
+	const rows = ids
+		.filter( ( id ) => ! variables[ id ].deleted )
+		.map( ( id ) => {
+			const variable = variables[ id ];
+			const variableType = getVariableType( variable.type );
+
+			return {
+				id,
+				name: variable.label,
+				value: variable.value,
+				type: variable.type,
+				...variableType,
+			};
+		} );
 
 	const tableSX: SxProps = {
 		minWidth: 250,
@@ -46,7 +54,7 @@ export const VariablesManagerTable = ( { menuActions }: Props ) => {
 
 	return (
 		<TableContainer sx={ { overflow: 'initial' } }>
-			<Table sx={ tableSX } aria-label="Variables manager list with drag and drop reordering">
+			<Table sx={ tableSX } aria-label="Variables manager list with drag and drop reordering" stickyHeader>
 				<TableHead>
 					<TableRow>
 						<VariableTableCell isHeader noPadding width={ 10 } maxWidth={ 10 } />
@@ -129,21 +137,56 @@ export const VariablesManagerTable = ( { menuActions }: Props ) => {
 												</IconButton>
 											</VariableTableCell>
 											<VariableTableCell>
-												<Stack direction="row" alignItems="center" gap={ 1 }>
-													{ createElement( row.icon, { fontSize: 'inherit' } ) }
-													<EllipsisWithTooltip title={ row.name }>
+												<VariableEditableCell
+													initialValue={ row.name }
+													onChange={ ( value ) => {
+														if ( value !== row.name ) {
+															handleOnChange( {
+																...variables,
+																[ row.id ]: { ...variables[ row.id ], label: value },
+															} );
+														}
+													} }
+													prefixElement={ createElement( row.icon, { fontSize: 'inherit' } ) }
+													editableElement={ ( { value, onChange } ) => (
+														<LabelField
+															id={ 'variable-label-' + row.id }
+															size="tiny"
+															value={ value }
+															onChange={ onChange }
+															focusOnShow
+														/>
+													) }
+												>
+													<EllipsisWithTooltip
+														title={ row.name }
+														sx={ { border: '4px solid transparent' } }
+													>
 														{ row.name }
 													</EllipsisWithTooltip>
-												</Stack>
+												</VariableEditableCell>
 											</VariableTableCell>
 											<VariableTableCell>
-												<Stack direction="row" alignItems="center" gap={ 1 }>
+												<VariableEditableCell
+													initialValue={ row.value }
+													onChange={ ( value ) => {
+														if ( value !== row.value ) {
+															handleOnChange( {
+																...variables,
+																[ row.id ]: { ...variables[ row.id ], value },
+															} );
+														}
+													} }
+													editableElement={ row.valueField }
+												>
 													{ row.startIcon && row.startIcon( { value: row.value } ) }
-
-													<EllipsisWithTooltip title={ row.value }>
+													<EllipsisWithTooltip
+														title={ row.value }
+														sx={ { border: '4px solid transparent' } }
+													>
 														{ row.value }
 													</EllipsisWithTooltip>
-												</Stack>
+												</VariableEditableCell>
 											</VariableTableCell>
 											<VariableTableCell
 												align="right"
@@ -156,6 +199,7 @@ export const VariablesManagerTable = ( { menuActions }: Props ) => {
 													<VariableEditMenu
 														menuActions={ menuActions }
 														disabled={ isSorting }
+														itemId={ row.id }
 													/>
 												</Stack>
 											</VariableTableCell>
