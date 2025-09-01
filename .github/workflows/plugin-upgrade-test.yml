@@ -64,6 +64,11 @@ jobs:
           npx playwright install chromium
       - name: Upgrade site
         run: |
+          # Create zip with correct structure (plugin files at root, not in build folder)
+          cd ./build && zip -r ../templates/playwright/elementor.zip . && cd ..
+          # Verify zip file exists
+          ls -la ./templates/playwright/elementor.zip
+          # Install the plugin
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin install ./elementor-playwright-templates/elementor.zip --force" --port=8888
           npx wp-lite-env cli --config=./tests/playwright/upgrade-test/.upgrade-test-wp-lite-env.json --command="wp plugin list" --port=8888
       - name: Run Playwright tests
